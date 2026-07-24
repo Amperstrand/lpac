@@ -219,6 +219,14 @@ static char *get_first_runpath() {
 }
 
 static char *get_driver_path() {
+    // Allow an explicit override for the driver-plugin directory. Needed on
+    // OpenWrt: packaging strips the ELF RUNPATH (CMAKE_SKIP_RPATH), so
+    // get_first_runpath() returns nothing and the loader can't find the .so
+    // plugins. The wrapper exports LPAC_DRIVER_HOME=<prefix> and we look in
+    // <prefix>/driver. Falls back to the RUNPATH scheme when unset.
+    const char *env_home = getenv("LPAC_DRIVER_HOME");
+    if (env_home != NULL && *env_home != '\0')
+        return path_concat(env_home, "driver");
     _cleanup_free_ char *LPAC_DRIVER_HOME = get_first_runpath();
     if (LPAC_DRIVER_HOME == NULL)
         return NULL;
