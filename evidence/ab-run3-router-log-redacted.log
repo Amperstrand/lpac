@@ -1,0 +1,87 @@
+=== AB-RUN3 20261026T190509Z tty=/dev/ttyUSB3 (A=083d080 no-fix | B=8269852 fix) ===
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:05:24Z TX[AT+QCCID] -> AT|OK|AT|OK|
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:05:29Z TX[AT+CSIM=10,"0070000001"] -> AT+QCCID|+QCCID: 89XXXXXXXXXXXXXXXXXX||OK|
+--- PRE probe: NO-CSIM-RESPONSE
+--- baseline cleanup (close 01..04)
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:05:34Z TX[AT+CSIM=10,"0070800100"] -> AT+CSIM=10,"0070000001"|+CSIM: 6,"006A81"||OK|
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:05:39Z TX[AT+CSIM=10,"0070800200"] -> AT+CSIM=10,"0070800100"|+CSIM: 4,"9000"||OK|
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:05:44Z TX[AT+CSIM=10,"0070800300"] -> AT+CSIM=10,"0070800200"|+CSIM: 4,"9000"||OK|
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:05:49Z TX[AT+CSIM=10,"0070800400"] -> |+CSIM: 4,"9000"||OK|
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:05:54Z TX[AT+CSIM=10,"0070000001"] -> 
+--- baseline probe after cleanup: NO-CSIM-RESPONSE
+>>> BASELINE NOT CLEAN — continuing anyway (see TX lines)
+=== PHASE A (no fix): 4 failing runs ===
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:05:59Z TX[AT+CSIM=10,"0070000001"] -> 
+A/1: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:06:04Z TX[AT+CSIM=10,"0070000001"] -> 
+A/2: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:06:09Z TX[AT+CSIM=10,"0070000001"] -> 
+A/3: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:06:14Z TX[AT+CSIM=10,"0070000001"] -> 
+A/4: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+A: no exhaustion in 4 runs — inspect TX lines
+--- A cleanup
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:06:19Z TX[AT+CSIM=10,"0070800100"] -> AT+CSIM=10,"0070000001"|+CSIM: 6,"006A81"||OK|
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:06:24Z TX[AT+CSIM=10,"0070800200"] -> 
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:06:29Z TX[AT+CSIM=10,"0070800300"] -> 
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:06:34Z TX[AT+CSIM=10,"0070800400"] -> AT+CSIM=10,"0070800300"|+CSIM: 4,"9000"||OK|
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:06:39Z TX[AT+CSIM=10,"0070000001"] -> AT+CSIM=10,"0070800400"|+CSIM: 4,"6A86"||OK|
+--- post-A-cleanup probe: SW=6A86
+=== PHASE B (fix): 6 failing runs ===
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:06:45Z TX[AT+CSIM=10,"0070000001"] -> 
+B/1: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:06:50Z TX[AT+CSIM=10,"0070000001"] -> 
+B/2: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:06:55Z TX[AT+CSIM=10,"0070000001"] -> 
+B/3: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:07:00Z TX[AT+CSIM=10,"0070000001"] -> 
+B/4: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:07:05Z TX[AT+CSIM=10,"0070000001"] -> 
+B/5: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+sleep: invalid number '1.5'
+sleep: invalid number '0.3'
+2026-10-26T19:07:10Z TX[AT+CSIM=10,"0070000001"] -> 
+B/6: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+=== DONE 20261026T190509Z ===
