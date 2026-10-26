@@ -39,6 +39,11 @@ struct at_userdata {
     // after a successful open (mirrors the mbim driver's last_channel_id).
     int last_logic_channel;
 
+    // Last failure description set by the at_csim driver (empty = none);
+    // echoed to stderr at the failing stage so `euicc_init` failures are
+    // diagnosable without a wire capture.
+    char last_error[192];
+
     struct timespec wall;
 };
 

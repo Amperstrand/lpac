@@ -12,25 +12,90 @@
 #include "at_helpers.h"
 #include "driver.h"
 
+#include <stdarg.h>
+
+static const char *at_csim_sw_name(const uint8_t sw1, const uint8_t sw2) {
+    switch (sw1) {
+    case 0x61:
+        return "bytes still pending";
+    case 0x62:
+        return "warning, state unchanged";
+    case 0x69:
+        switch (sw2) {
+        case 0x82:
+            return "security status not satisfied";
+        case 0x85:
+            return "condition of use not satisfied";
+        }
+        break;
+    case 0x6A:
+        switch (sw2) {
+        case 0x81:
+            return "no logical channel available (pool exhausted by leaked sessions?)";
+        case 0x82:
+            return "file or application not found";
+        case 0x86:
+            return "incorrect parameters P1-P2";
+        }
+        break;
+    case 0x6D:
+        return "instruction code not supported or invalid";
+    case 0x6E:
+        return "class not supported";
+    }
+    return NULL;
+}
+
+static void at_csim_set_error(struct at_userdata *userdata, const char *stage, const char *fmt, ...)
+    __attribute__((format(printf, 3, 4)));
+
+static void at_csim_set_error(struct at_userdata *userdata, const char *stage, const char *fmt, ...) {
+    va_list ap;
+    int n = snprintf(userdata->last_error, sizeof(userdata->last_error), "at_csim %s: ", stage);
+    if (n < 0)
+        return;
+    if ((size_t)n >= sizeof(userdata->last_error))
+        n = sizeof(userdata->last_error) - 1;
+    va_start(ap, fmt);
+    vsnprintf(userdata->last_error + n, sizeof(userdata->last_error) - (size_t)n, fmt, ap);
+    va_end(ap);
+    fprintf(stderr, "%s\n", userdata->last_error);
+}
+
+static void at_csim_set_error_sw(struct at_userdata *userdata, const char *stage, const uint8_t *resp,
+                                 const uint32_t resp_len) {
+    if (resp_len >= 2) {
+        const uint8_t sw1 = resp[resp_len - 2];
+        const uint8_t sw2 = resp[resp_len - 1];
+        const char *name = at_csim_sw_name(sw1, sw2);
+        if (name != NULL)
+            at_csim_set_error(userdata, stage, "SW=%02X%02X (%s)", sw1, sw2, name);
+        else
+            at_csim_set_error(userdata, stage, "SW=%02X%02X", sw1, sw2);
+    } else {
+        at_csim_set_error(userdata, stage, "short response (%u bytes)", resp_len);
+    }
+}
+
 static int apdu_interface_connect(struct euicc_ctx *ctx) {
     struct at_userdata *userdata = ctx->apdu.interface->userdata;
 
     const char *device = getenv_or_default(ENV_AT_DEVICE, userdata->default_device);
     if (at_device_open(userdata, device) != 0) {
-        fprintf(stderr, "Failed to open device: %s\n", device);
+        at_csim_set_error(userdata, "connect", "cannot open device %s", device);
         return -1;
     }
 
     at_emit_command(userdata, "AT");
     if (at_expect(userdata, NULL, NULL) != 0) {
-        fprintf(stderr, "Device not responding to AT commands\n");
-        return false;
+        at_csim_set_error(userdata, "connect", "device not responding to AT");
+        return -1;
     }
 
     at_emit_command(userdata, "AT+CSIM=?");
     if (at_expect(userdata, NULL, NULL) != 0) {
-        fprintf(stderr, "Device missing +CSIM support\n");
-        return false;
+        at_csim_set_error(userdata, "connect", "modem reports no +CSIM support");
+        return -1;
     }
 
     return true;
@@ -71,11 +136,16 @@ static int apdu_interface_transmit(struct euicc_ctx *ctx, uint8_t **rx, uint32_t
 
     // Parse the response
     {
-        strtok(response, ",");        // Skip the length part
-        response = strtok(NULL, ","); // Get the response part
+        strtok(response, ","); // Skip the length part
+        char *payload = strtok(NULL, ","); // Get the response part
+        if (payload == NULL) {
+            at_csim_set_error(userdata, "transmit", "malformed +CSIM response: no hex field");
+            goto err;
+        }
+        response = payload;
         // unquote strings
         const size_t n = strlen(response);
-        if (response[0] == '"' && response[n - 1] == '"') {
+        if (n >= 2 && response[0] == '"' && response[n - 1] == '"') {
             memmove(response, response + 1, n - 2);
             response[n - 2] = '\0'; // Null-terminate the new string
         }
@@ -113,9 +183,13 @@ static int apdu_interface_logic_channel_open(struct euicc_ctx *ctx, const uint8_
     _cleanup_free_ uint8_t *resp = NULL;
     uint32_t resp_len = 0;
     if (apdu_interface_transmit(ctx, &resp, &resp_len, manage_open, sizeof(manage_open)) != 0) {
+        at_csim_set_error(userdata, "logic_channel_open",
+                          "MANAGE CHANNEL open: no +CSIM response (AT-level failure; on modems that "
+                          "reject lowercase hex check LPAC_APDU_AT_HEX)");
         return -1;
     }
     if (resp_len != 3 || resp[1] != 0x90 || resp[2] != 0x00) {
+        at_csim_set_error_sw(userdata, "logic_channel_open: MANAGE CHANNEL open", resp, resp_len);
         return -1;
     }
     uint8_t channel_byte = resp[0];
@@ -124,6 +198,7 @@ static int apdu_interface_logic_channel_open(struct euicc_ctx *ctx, const uint8_
     // Select AID
     _cleanup_free_ uint8_t *select_cmd = malloc(5 + aid_len);
     if (select_cmd == NULL) {
+        at_csim_set_error(userdata, "logic_channel_open", "out of memory");
         apdu_interface_logic_channel_close(ctx, channel_byte);
         return -1;
     }
@@ -137,11 +212,13 @@ static int apdu_interface_logic_channel_open(struct euicc_ctx *ctx, const uint8_
     resp = NULL;
     resp_len = 0;
     if (apdu_interface_transmit(ctx, &resp, &resp_len, select_cmd, 5 + aid_len) != 0) {
+        at_csim_set_error(userdata, "logic_channel_open", "SELECT by AID: no +CSIM response (AT-level failure)");
         apdu_interface_logic_channel_close(ctx, channel_byte);
         return -1;
     }
 
     if (resp_len < 2 || (resp[resp_len - 2] != 0x90 && resp[resp_len - 2] != 0x61)) {
+        at_csim_set_error_sw(userdata, "logic_channel_open: SELECT by AID", resp, resp_len);
         apdu_interface_logic_channel_close(ctx, channel_byte);
         return -1;
     }
