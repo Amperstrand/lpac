@@ -60,7 +60,8 @@ static int applet_main(const int argc, char **argv) {
     }
 
     if (all) {
-        _cleanup_es10b_notification_metadata_list_ struct es10b_notification_metadata_list *notifications = NULL, *rptr = NULL;
+        _cleanup_es10b_notification_metadata_list_ struct es10b_notification_metadata_list *notifications = NULL,
+                                                                                           *rptr = NULL;
 
         if (es10b_list_notification(&euicc_ctx, &notifications)) {
             jprint_error("es10b_list_notification", NULL);
