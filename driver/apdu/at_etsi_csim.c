@@ -46,6 +46,8 @@ static const char *at_csim_sw_name(const uint8_t sw1, const uint8_t sw2) {
         return "instruction code not supported or invalid";
     case 0x6E:
         return "class not supported";
+    case 0x6C:
+        return "wrong Le; ISO/IEC 7816-4 says re-issue the command with Le=SW2";
     }
     return NULL;
 }
