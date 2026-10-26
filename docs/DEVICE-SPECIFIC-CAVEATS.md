@@ -28,16 +28,12 @@ Affected modems reported so far (all Qualcomm-based):
 
 | Module | Report |
 | --- | --- |
-| Sierra Wireless EM7565 | pySim change [24023]: `AT+CSIM=14,"00a40004023F00"` → `ERROR`, uppercased → `+CSIM: 4,"612F"` (fix merged in pySim since 2021) |
-| Foxconn T99W696 | lpac [#428] |
-| Quectel RG502Q-EA | lpac [#466]: same failure signature, wire-captured for both cases; with uppercase payloads a complete SGP.22 profile download ran over `AT+CSIM` in ~24 s |
+| Sierra Wireless EM7565 | <https://gerrit.osmocom.org/c/pySim/+/24023>: `AT+CSIM=14,"00a40004023F00"` → `ERROR`, uppercased → `+CSIM: 4,"612F"` (fix merged in pySim since 2021) |
+| Foxconn T99W696 | <https://github.com/estkme-group/lpac/issues/428> |
+| Quectel RG502Q-EA | <https://github.com/estkme-group/lpac/pull/466>: same failure signature, wire-captured for both cases; with uppercase payloads a complete SGP.22 profile download ran over `AT+CSIM` in ~24 s |
 
 Solution: set `LPAC_APDU_AT_HEX=UPPER` when using the `at` or `at_csim`
 backend on these modems.
 
 No modem that requires the lowercase form has been documented so far, but the
 default stays `LOWER` since neither case is mandated for the TE.
-
-[24023]: https://gerrit.osmocom.org/c/pySim/+/24023
-[#428]: https://github.com/estkme-group/lpac/issues/428
-[#466]: https://github.com/estkme-group/lpac/pull/466
