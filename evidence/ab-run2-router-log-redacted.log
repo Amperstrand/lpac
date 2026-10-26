@@ -1,0 +1,45 @@
+=== AB-RUN2 20261026T184602Z tty=/dev/ttyUSB3 (A=083d080 no-fix | B=8269852 fix) ===
+2026-10-26T18:46:18Z TX[AT+QCCID] -> OK|AT+QCCID|+QCCID: 89XXXXXXXXXXXXXXXXXX|OK|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+Q|ERROR|AT+|ERROR|AT+|ERROR|AT|OK|AT|OK|
+--- PRE: QCCID RESP above; channel probe:
+2026-10-26T18:46:23Z TX[AT+CSIM=10,"0070000001"] -> AT+CSIM=10,"0070000001"|+CSIM: 6,"006A81"|OK|ERROR|
+--- PRE probe: EXHAUSTED(6A81)
+=== PHASE A (no fix): up to 6 failing euicc_init runs ===
+2026-10-26T18:46:27Z TX[AT+CSIM=10,"0070000001"] -> 
+A/1: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+2026-10-26T18:46:31Z TX[AT+CSIM=10,"0070000001"] -> 
+A/2: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+2026-10-26T18:46:35Z TX[AT+CSIM=10,"0070000001"] -> 
+A/3: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+2026-10-26T18:46:39Z TX[AT+CSIM=10,"0070000001"] -> 
+A/4: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+2026-10-26T18:46:43Z TX[AT+CSIM=10,"0070000001"] -> 
+A/5: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+2026-10-26T18:46:47Z TX[AT+CSIM=10,"0070000001"] -> 
+A/6: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+A: no exhaustion within 6 runs — inspect TX lines above
+--- post-A cleanup: close ch 01..04, verify pool
+2026-10-26T18:46:51Z TX[AT+CSIM=10,"0070800100"] -> 
+2026-10-26T18:46:55Z TX[AT+CSIM=10,"0070800200"] -> 
+2026-10-26T18:46:59Z TX[AT+CSIM=10,"0070800300"] -> 
+2026-10-26T18:47:03Z TX[AT+CSIM=10,"0070800400"] -> 
+2026-10-26T18:47:07Z TX[AT+CSIM=10,"0070000001"] -> AT+CSIM=10,"0070800100"|+CSIM: 4,"9000"||OK|AT+CSIM=10,"0070800200"|+CSIM: 4,"9000"||OK|AT+CSIM=10,"0070800300"|+CSIM: 4,"9000"||OK|
+2026-10-26T18:47:11Z TX[AT+CSIM=10,"00708000"] -> 
+--- post-A-cleanup probe: OPEN-OK ch=
+=== PHASE B (fix): 8 failing runs, pool must stay open ===
+2026-10-26T18:47:15Z TX[AT+CSIM=10,"0070000001"] -> AT+CSIM=10,"0070000001"|
+B/1: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+2026-10-26T18:47:19Z TX[AT+CSIM=10,"0070000001"] -> 
+B/2: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+2026-10-26T18:47:24Z TX[AT+CSIM=10,"0070000001"] -> 
+B/3: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+2026-10-26T18:47:28Z TX[AT+CSIM=10,"0070000001"] -> 
+B/4: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+2026-10-26T18:47:32Z TX[AT+CSIM=10,"0070000001"] -> 
+B/5: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+2026-10-26T18:47:36Z TX[AT+CSIM=10,"0070000001"] -> 
+B/6: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+2026-10-26T18:47:40Z TX[AT+CSIM=10,"0070000001"] -> 
+B/7: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+2026-10-26T18:47:44Z TX[AT+CSIM=10,"0070000001"] -> 
+B/8: [{"type":"lpa","payload":{"code":-1,"message":"euicc_init","data":""}} ] probe: NO-CSIM-RESPONSE
+=== DONE 20261026T184602Z ===
