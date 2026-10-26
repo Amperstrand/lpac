@@ -31,12 +31,16 @@ static const char *at_csim_sw_name(const uint8_t sw1, const uint8_t sw2) {
     case 0x6A:
         switch (sw2) {
         case 0x81:
-            return "no logical channel available (pool exhausted by leaked sessions?)";
+            return "function not supported (on eUICCs often channel-pool exhaustion from leaked sessions)";
         case 0x82:
             return "file or application not found";
         case 0x86:
             return "incorrect parameters P1-P2";
         }
+        break;
+    case 0x68:
+        if (sw2 == 0x81)
+            return "logical channel not supported";
         break;
     case 0x6D:
         return "instruction code not supported or invalid";
