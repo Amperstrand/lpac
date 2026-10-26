@@ -212,7 +212,9 @@ static int apdu_interface_logic_channel_open(struct euicc_ctx *ctx, const uint8_
     resp = NULL;
     resp_len = 0;
     if (apdu_interface_transmit(ctx, &resp, &resp_len, select_cmd, 5 + aid_len) != 0) {
-        at_csim_set_error(userdata, "logic_channel_open", "SELECT by AID: no +CSIM response (AT-level failure)");
+        at_csim_set_error(userdata, "logic_channel_open",
+                          "SELECT by AID: no +CSIM response (AT-level failure; on modems that reject "
+                          "lowercase hex check LPAC_APDU_AT_HEX)");
         apdu_interface_logic_channel_close(ctx, channel_byte);
         return -1;
     }
