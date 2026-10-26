@@ -63,6 +63,7 @@ static int apdu_interface_transmit(struct euicc_ctx *ctx, uint8_t **rx, uint32_t
     encoded = malloc(tx_len * 2 + 1);
     euicc_hexutil_bin2hex(encoded, tx_len * 2 + 1, tx, tx_len);
 
+    at_tx_gap_wait();
     at_emit_command(userdata, "AT+CGLA=%s,%u,\"%s\"", logic_channel, tx_len * 2, encoded);
     if (at_expect(userdata, &response, "+CGLA: ") != 0 || response == NULL)
         goto err;

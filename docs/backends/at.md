@@ -52,3 +52,6 @@ Use the [AT+CSIM][unmanaged] command for APDU transmission.
   ([string](types.md#string-type), default: `/dev/ttyUSB0` on Unix-like platform and `COM3` on Windows)
 - `LPAC_APDU_AT_DEBUG`: enable debug output for AT APDU backend. \
   ([boolean](types.md#boolean-type), default: `false`)
+- `LPAC_APDU_AT_TX_GAP_MS`: minimum gap in milliseconds before each APDU data exchange (`AT+CSIM`, `AT+CGLA`). \
+  Some modems thrash when exchanges arrive back-to-back. \
+  ([integer](types.md#integer-type), default: `0` = disabled)

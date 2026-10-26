@@ -21,6 +21,21 @@ inline void at_warning_message(void) {
     }
 }
 
+// Some modems (e.g. Quectel RG502Q-EA with Qualcomm-class firmware) enter a
+// SIM-session thrash state (URC flood, lagging/swallowed responses) when
+// AT+CSIM/AT+CGLA data exchanges arrive back-to-back. An optional
+// inter-command floor in milliseconds avoids that class; presence and
+// capability probes stay unpaced by design. WIP — bench A/B plan:
+// https://github.com/Amperstrand/lpac/issues/3
+void at_tx_gap_wait(void) {
+    const int gap_ms = getenv_or_default(ENV_AT_TX_GAP_MS, 0);
+#if !defined(_WIN32)
+    if (gap_ms > 0) {
+        usleep((useconds_t)gap_ms * 1000);
+    }
+#endif
+}
+
 char *at_channel_get(struct at_userdata *userdata, const int index) {
     if (index <= 0 || index > AT_MAX_LOGICAL_CHANNELS)
         return NULL;

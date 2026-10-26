@@ -3,6 +3,7 @@
 #include "at_cmd.h"
 
 void at_warning_message(void);
+void at_tx_gap_wait(void);
 char *at_channel_get(struct at_userdata *userdata, int index);
 int at_channel_set(struct at_userdata *userdata, int index, const char *identifier);
 int at_channel_next_id(struct at_userdata *userdata);

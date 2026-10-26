@@ -11,6 +11,7 @@
 
 #define ENV_AT_DEBUG APDU_ENV_NAME(AT, DEBUG)
 #define ENV_AT_DEVICE APDU_ENV_NAME(AT, DEVICE)
+#define ENV_AT_TX_GAP_MS APDU_ENV_NAME(AT, TX_GAP_MS)
 
 struct at_userdata {
     char *default_device;
