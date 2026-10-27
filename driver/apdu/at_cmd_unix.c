@@ -314,7 +314,6 @@ int at_setup_userdata(struct at_userdata **userdata) {
     (*userdata)->wall = get_current_clock(CLOCK_MONOTONIC);
     (*userdata)->default_device = "/dev/ttyUSB0";
     (*userdata)->fd = -1;
-    (*userdata)->last_logic_channel = -1;
     (*userdata)->channels = calloc(AT_MAX_LOGICAL_CHANNELS + 1, sizeof(char *));
     if ((*userdata)->channels == NULL) {
         free(*userdata);

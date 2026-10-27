@@ -34,11 +34,6 @@ struct at_userdata {
 
     char **channels;
 
-    // Last logical channel opened on the card by the at_csim driver
-    // (-1 = none). Used to close leaked channels when a session aborts
-    // after a successful open (mirrors the mbim driver's last_channel_id).
-    int last_logic_channel;
-
     // Last failure description set by the at_csim driver (empty = none);
     // echoed to stderr at the failing stage so `euicc_init` failures are
     // diagnosable without a wire capture.

@@ -195,7 +195,6 @@ int at_setup_userdata(struct at_userdata **userdata) {
     (*userdata)->wall = get_current_clock(CLOCK_MONOTONIC);
     (*userdata)->default_device = "COM3";
     (*userdata)->hComm = INVALID_HANDLE_VALUE;
-    (*userdata)->last_logic_channel = -1;
     (*userdata)->at_cmd_buffer = calloc(AT_BUFFER_SIZE, 1);
     if ((*userdata)->at_cmd_buffer == NULL)
         goto err;
