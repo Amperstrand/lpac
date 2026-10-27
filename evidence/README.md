@@ -33,6 +33,26 @@ the driver addressed the just-allocated channel (CLA 01) — the exact
 failure path the fix targets. User-visible behavior is unchanged by the
 fix; only the cleanup differs.
 
+## Independent validation — stock-vs-fix cross-session exhaustion (2026-10-27)
+
+Independent lane run (artifacts: `independent-leakab/`), on a stronger
+baseline than the host A/B above: **pure stock `a43e46ae`** vs fix commit
+`c004218`, with session failure injected via `LPAC_CUSTOM_ISD_R_AID=<bogus>`
+(SELECT-by-AID fails on a valid channel — no hex-case interplay), pty→mock.
+
+- **Stock**: three failing inits (euicc_init JSON, exit 255) leak channels
+  01–03 (wire: zero closes) → the **4th, legitimate session dies at init**
+  with `6A81` on its first MANAGE CHANNEL open — the exact bench
+  cross-session exhaustion fingerprint, fully reproduced off-hardware.
+- **Fixed** (`c004218`): every failing init closes its channel inline
+  (three closes in the wire) → the 4th session gets a **full ISD-R
+  session** (init-level success, proceeds to ES10 STORE DATA).
+- Complementary framing: this fix covers clean init-failure aborts; #467
+  (applet zero-inits) removes the crash-before-teardown class that bypasses
+  cleanup entirely. **Together they close both leak classes.**
+- Design note re-confirmed: the fix's close ignores the transmit result —
+  it tolerates refused closes observed on this modem class.
+
 ## In-the-wild corroboration — real hardware (redacted logs)
 
 - `ab-run2-router-log-redacted.log`: at session start (live router, after
