@@ -18,6 +18,7 @@
 #    define CURLOPT_WRITEDATA 10001
 #    define CURLOPT_SSL_VERIFYPEER 64
 #    define CURLOPT_SSL_VERIFYHOST 81
+#    define CURLOPT_CAINFO 10065
 #    define CURLOPT_HTTPHEADER 10023
 #    define CURLOPT_POSTFIELDS 10015
 #    define CURLOPT_POSTFIELDSIZE 60
@@ -89,8 +90,22 @@ static int http_interface_transmit(struct euicc_ctx *ctx, const char *url, uint3
     libcurl._curl_easy_setopt(curl, CURLOPT_URL, url);
     libcurl._curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, http_trans_write_callback);
     libcurl._curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&responseData);
-    libcurl._curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-    libcurl._curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+    /* TLS verification ON by default (known-good doctrine: GSMA-augmented
+     * trust store, RSP2 Root CI1). LPAC_HTTP_SSL_VERIFY=0 opts out for bench
+     * experiments only; LPAC_HTTP_CURL_CAINFO points at an augmented bundle. */
+    {
+        const char *verify_off = getenv("LPAC_HTTP_SSL_VERIFY");
+        const char *cainfo = getenv("LPAC_HTTP_CURL_CAINFO");
+        if (verify_off != NULL && strcmp(verify_off, "0") == 0) {
+            libcurl._curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+            libcurl._curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+        } else {
+            libcurl._curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
+            libcurl._curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
+        }
+        if (cainfo != NULL && *cainfo != '\0')
+            libcurl._curl_easy_setopt(curl, CURLOPT_CAINFO, cainfo);
+    }
     for (int i = 0; h[i] != NULL; i++) {
         nheaders = libcurl._curl_slist_append(headers, h[i]);
         if (nheaders == NULL) {
