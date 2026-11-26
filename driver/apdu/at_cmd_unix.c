@@ -244,7 +244,9 @@ end:
 #endif
 
 int at_expect(struct at_userdata *userdata, char **response, const char *expected) {
-    return at_expect_with_deadline(userdata, response, expected, AT_DEFAULT_DEADLINE_MS);
+    /* #856: LPAC_APDU_AT_TIMEOUT_MS overrides the per-APDU deadline at
+     * runtime (the BPP-install timeout class — see at_cmd.h). */
+    return at_expect_with_deadline(userdata, response, expected, at_effective_deadline_ms());
 }
 
 int at_device_open(struct at_userdata *userdata, const char *device_name) {

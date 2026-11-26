@@ -18,6 +18,33 @@
 #define ENV_AT_DEBUG APDU_ENV_NAME(AT, DEBUG)
 #define ENV_AT_DEVICE APDU_ENV_NAME(AT, DEVICE)
 #define ENV_AT_HEX APDU_ENV_NAME(AT, HEX)
+#define ENV_AT_TIMEOUT_MS APDU_ENV_NAME(AT, TIMEOUT_MS)
+
+/**
+ * Runtime deadline override (#856 BPP-install timeout):
+ *
+ * The default 10s per-APDU deadline is too short for STORE DATA
+ * sequences on a card with accumulated NVM writes — the BPP install
+ * (es10b_load_bound_profile_package) sends ~300 APDUs and any single
+ * one exceeding the deadline aborts the whole download.
+ *
+ * LPAC_APDU_AT_TIMEOUT_MS=<ms> raises the per-APDU deadline for ALL
+ * at_csim operations (reads included — they just complete faster than
+ * the deadline). Use 30000-60000 for BPP installs on tired cards.
+ * Default (unset) keeps the 10s compile-time constant.
+ *
+ * CGLA keeps its own 240s deadline (a different operation class) and
+ * is NOT affected by this override.
+ */
+static inline int at_effective_deadline_ms(void) {
+    const char *env = getenv(ENV_AT_TIMEOUT_MS);
+    if (env && *env) {
+        int ms = atoi(env);
+        if (ms >= 1000)  /* floor: 1s; refuse absurd values */
+            return ms;
+    }
+    return AT_DEFAULT_DEADLINE_MS;
+}
 
 struct at_userdata {
     char *default_device;
