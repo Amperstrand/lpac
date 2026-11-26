@@ -12,32 +12,113 @@
 #include "at_helpers.h"
 #include "driver.h"
 
+#include <stdarg.h>
+
+static const char *at_csim_sw_name(const uint8_t sw1, const uint8_t sw2) {
+    switch (sw1) {
+    case 0x61:
+        return "bytes still pending";
+    case 0x62:
+        return "warning, state unchanged";
+    case 0x69:
+        switch (sw2) {
+        case 0x82:
+            return "security status not satisfied";
+        case 0x85:
+            return "condition of use not satisfied";
+        }
+        break;
+    case 0x6A:
+        switch (sw2) {
+        case 0x81:
+            return "function not supported (on eUICCs often channel-pool exhaustion from leaked sessions)";
+        case 0x82:
+            return "file or application not found";
+        case 0x86:
+            return "incorrect parameters P1-P2";
+        }
+        break;
+    case 0x68:
+        if (sw2 == 0x81)
+            return "logical channel not supported";
+        break;
+    case 0x6D:
+        return "instruction code not supported or invalid";
+    case 0x6E:
+        return "class not supported";
+    case 0x6C:
+        return "wrong Le; ISO/IEC 7816-4 says re-issue the command with Le=SW2";
+    }
+    return NULL;
+}
+
+static void at_csim_set_error(struct at_userdata *userdata, const char *stage, const char *fmt, ...)
+    __attribute__((format(printf, 3, 4)));
+
+static void at_csim_set_error(struct at_userdata *userdata, const char *stage, const char *fmt, ...) {
+    va_list ap;
+    int n = snprintf(userdata->last_error, sizeof(userdata->last_error), "at_csim %s: ", stage);
+    if (n < 0)
+        return;
+    if ((size_t)n >= sizeof(userdata->last_error))
+        n = sizeof(userdata->last_error) - 1;
+    va_start(ap, fmt);
+    vsnprintf(userdata->last_error + n, sizeof(userdata->last_error) - (size_t)n, fmt, ap);
+    va_end(ap);
+    fprintf(stderr, "%s\n", userdata->last_error);
+}
+
+static void at_csim_set_error_sw(struct at_userdata *userdata, const char *stage, const uint8_t *resp,
+                                 const uint32_t resp_len) {
+    if (resp_len >= 2) {
+        const uint8_t sw1 = resp[resp_len - 2];
+        const uint8_t sw2 = resp[resp_len - 1];
+        const char *name = at_csim_sw_name(sw1, sw2);
+        if (name != NULL)
+            at_csim_set_error(userdata, stage, "SW=%02X%02X (%s)", sw1, sw2, name);
+        else
+            at_csim_set_error(userdata, stage, "SW=%02X%02X", sw1, sw2);
+    } else {
+        at_csim_set_error(userdata, stage, "short response (%u bytes)", resp_len);
+    }
+}
+
 static int apdu_interface_connect(struct euicc_ctx *ctx) {
     struct at_userdata *userdata = ctx->apdu.interface->userdata;
 
     const char *device = getenv_or_default(ENV_AT_DEVICE, userdata->default_device);
     if (at_device_open(userdata, device) != 0) {
-        fprintf(stderr, "Failed to open device: %s\n", device);
+        at_csim_set_error(userdata, "connect", "cannot open device %s", device);
         return -1;
     }
 
     at_emit_command(userdata, "AT");
     if (at_expect(userdata, NULL, NULL) != 0) {
-        fprintf(stderr, "Device not responding to AT commands\n");
-        return false;
+        at_csim_set_error(userdata, "connect", "device not responding to AT");
+        return -1;
     }
 
     at_emit_command(userdata, "AT+CSIM=?");
     if (at_expect(userdata, NULL, NULL) != 0) {
-        fprintf(stderr, "Device missing +CSIM support\n");
-        return false;
+        at_csim_set_error(userdata, "connect", "modem reports no +CSIM support");
+        return -1;
     }
 
     return true;
 }
 
+static void apdu_interface_logic_channel_close(struct euicc_ctx *ctx, const uint8_t channel);
+
 static void apdu_interface_disconnect(struct euicc_ctx *ctx) {
     struct at_userdata *userdata = ctx->apdu.interface->userdata;
+
+    for (int channel = 1; channel <= AT_MAX_LOGICAL_CHANNELS; channel++) {
+        if (at_channel_get(userdata, channel) == NULL)
+            continue;
+        fprintf(stderr, "Cleaning up leaked APDU channel %d\n", channel);
+        apdu_interface_logic_channel_close(ctx, (uint8_t)channel);
+    }
+
     at_device_close(userdata);
 }
 
@@ -55,6 +136,7 @@ static int apdu_interface_transmit(struct euicc_ctx *ctx, uint8_t **rx, uint32_t
 
     encoded = malloc(tx_len * 2 + 1);
     euicc_hexutil_bin2hex(encoded, tx_len * 2 + 1, tx, tx_len);
+    at_apply_hex_case(encoded);
 
     at_emit_command(userdata, "AT+CSIM=%u,\"%s\"", tx_len * 2, encoded);
     if (at_expect(userdata, &response, "+CSIM: ") != 0 || response == NULL)
@@ -62,11 +144,16 @@ static int apdu_interface_transmit(struct euicc_ctx *ctx, uint8_t **rx, uint32_t
 
     // Parse the response
     {
-        strtok(response, ",");        // Skip the length part
-        response = strtok(NULL, ","); // Get the response part
+        strtok(response, ","); // Skip the length part
+        char *payload = strtok(NULL, ","); // Get the response part
+        if (payload == NULL) {
+            at_csim_set_error(userdata, "transmit", "malformed +CSIM response: no hex field");
+            goto err;
+        }
+        response = payload;
         // unquote strings
         const size_t n = strlen(response);
-        if (response[0] == '"' && response[n - 1] == '"') {
+        if (n >= 2 && response[0] == '"' && response[n - 1] == '"') {
             memmove(response, response + 1, n - 2);
             response[n - 2] = '\0'; // Null-terminate the new string
         }
@@ -94,6 +181,8 @@ exit:
 }
 
 static int apdu_interface_logic_channel_open(struct euicc_ctx *ctx, const uint8_t *aid, const uint8_t aid_len) {
+    struct at_userdata *userdata = ctx->apdu.interface->userdata;
+
     _cleanup_free_ char *aid_hex = malloc(aid_len * 2 + 1);
     euicc_hexutil_bin2hex(aid_hex, aid_len * 2 + 1, aid, aid_len);
 
@@ -102,16 +191,30 @@ static int apdu_interface_logic_channel_open(struct euicc_ctx *ctx, const uint8_
     _cleanup_free_ uint8_t *resp = NULL;
     uint32_t resp_len = 0;
     if (apdu_interface_transmit(ctx, &resp, &resp_len, manage_open, sizeof(manage_open)) != 0) {
+        at_csim_set_error(userdata, "logic_channel_open",
+                          "MANAGE CHANNEL open: no +CSIM response (AT-level failure; on modems that "
+                          "reject lowercase hex check LPAC_APDU_AT_HEX)");
         return -1;
     }
     if (resp_len != 3 || resp[1] != 0x90 || resp[2] != 0x00) {
+        at_csim_set_error_sw(userdata, "logic_channel_open: MANAGE CHANNEL open", resp, resp_len);
         return -1;
     }
     uint8_t channel_byte = resp[0];
 
+    // Register the open channel, like at_etsi does, so a later disconnect can
+    // close it when a session aborts without a matching logic_channel_close
+    char identifier[4]; // logical channel numbers are 1..19
+    snprintf(identifier, sizeof(identifier), "%d", channel_byte);
+    if (at_channel_set(userdata, channel_byte, identifier) != 0) {
+        return -1;
+    }
+
     // Select AID
     _cleanup_free_ uint8_t *select_cmd = malloc(5 + aid_len);
     if (select_cmd == NULL) {
+        at_csim_set_error(userdata, "logic_channel_open", "out of memory");
+        apdu_interface_logic_channel_close(ctx, channel_byte);
         return -1;
     }
     select_cmd[0] = channel_byte;
@@ -124,20 +227,32 @@ static int apdu_interface_logic_channel_open(struct euicc_ctx *ctx, const uint8_
     resp = NULL;
     resp_len = 0;
     if (apdu_interface_transmit(ctx, &resp, &resp_len, select_cmd, 5 + aid_len) != 0) {
+        at_csim_set_error(userdata, "logic_channel_open",
+                          "SELECT by AID: no +CSIM response (AT-level failure; on modems that reject "
+                          "lowercase hex check LPAC_APDU_AT_HEX)");
+        apdu_interface_logic_channel_close(ctx, channel_byte);
         return -1;
     }
 
     if (resp_len < 2 || (resp[resp_len - 2] != 0x90 && resp[resp_len - 2] != 0x61)) {
+        at_csim_set_error_sw(userdata, "logic_channel_open: SELECT by AID", resp, resp_len);
+        apdu_interface_logic_channel_close(ctx, channel_byte);
         return -1;
     }
     return (int)channel_byte; // channel number
 }
 
 static void apdu_interface_logic_channel_close(struct euicc_ctx *ctx, const uint8_t channel) {
+    struct at_userdata *userdata = ctx->apdu.interface->userdata;
+
+    if (at_channel_get(userdata, channel) == NULL)
+        return;
+
     const uint8_t manage_close[] = {0x00, 0x70, 0x80, channel, 0x00};
     _cleanup_free_ uint8_t *resp = NULL;
     uint32_t resp_len = 0;
     apdu_interface_transmit(ctx, &resp, &resp_len, manage_close, sizeof(manage_close));
+    at_channel_set(userdata, channel, NULL);
 }
 
 static int libapduinterface_init(struct euicc_apdu_interface *ifstruct) {
