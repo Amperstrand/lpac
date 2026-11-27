@@ -178,6 +178,19 @@ static int es10b_load_bound_profile_package_tx(struct euicc_ctx *ctx,
         goto err;
     }
 
+    /* #866/#868 diagnostic: hex-dump the raw ES10b response before parsing,
+     * so "unknown,unknown" failures are diagnosable. Enable with
+     * LPAC_DEBUG_ES10B=1 — the raw card reply (SW, tags, error codes)
+     * is printed to stderr before the DER decoder runs. */
+    if (getenv("LPAC_DEBUG_ES10B")) {
+        fprintf(stderr, "ES10B raw response (%u bytes): ", resplen);
+        for (unsigned i = 0; i < resplen && i < 256; i++) {
+            fprintf(stderr, "%02X", respbuf[i]);
+        }
+        if (resplen > 256) fprintf(stderr, "…(%u more)", resplen - 256);
+        fprintf(stderr, "\n");
+    }
+
     if (resplen > 0) {
         struct euicc_derutil_node tmpnode, n_notificationMetadata, n_sequenceNumber, n_iccid, n_finalResult;
 
