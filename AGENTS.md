@@ -42,6 +42,13 @@ we can:
 | `--help` before euicc_init | deployed on bench unit | `lpac chip --help` no longer touches the card |
 | AT-only static ELF build | hardware-proven | Single binary, libc-only NEEDED — for /overlay-constrained targets |
 
+## Open defects (spec-anchored, not yet fixed)
+
+| Issue | Class | Spec anchor |
+|---|---|---|
+| #12 | mid-stream transport error discards accumulated response (early PIR from failed BPP install lost) | SGP.22 v2.2 §2.5.6 + estkme-group#474 fix-2 |
+| (conwrt #866) | unknown,unknown conflates unmapped-error with parse-failure | SGP.22 v2.2 §2.5.6 ErrorResult surfacing |
+
 ## External etiquette (hard rule)
 
 **Never interact with repositories outside the Amperstrand organization.**
