@@ -3,7 +3,11 @@
 ## General
 
 - `LPAC_CUSTOM_ES10X_MSS`: specify maximum segment size for ES10x APDU backend. \
-  ([integer](backends/types.md#integer-type), default: 120, min: 6, max: 255)
+  ([integer](backends/types.md#integer-type), default: 250, min: 6, max: 255)
+  The default was raised from 120 to 250 so the initial SBPP segment (SGP.22
+  section 2.5.5) is transported in a single APDU; see
+  estkme-group/lpac#474. Values above 250 are known to fail on the Windows
+  PC/SC backend (estkme-group/lpac#473).
 - `LPAC_CUSTOM_ISD_R_AID`: specify which AID will be used to open the logic channel. \
   ([string](backends/types.md#string-type), hexadecimal string, default: `A0000005591010FFFFFFFF8900000100`)
 - `LPAC_APDU_DEBUG`: enable debug output for APDU. \
