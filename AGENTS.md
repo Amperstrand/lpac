@@ -38,6 +38,7 @@ we can:
 | TLS verification ON by default | hardware-proven | `LPAC_HTTP_SSL_VERIFY=0` opts out; `LPAC_HTTP_CURL_CAINFO` for trust store |
 | `LPAC_APDU_AT_TIMEOUT_MS` override | logic-tested, hardware-pending | Raises per-APDU deadline for BPP installs on tired cards |
 | `LPAC_DEBUG_ES10B=1` hex-dump | deployed (Felix proved on hardware) | Dumps raw card response before DER parsing — diagnoses "unknown,unknown" failures |
+| Default MSS 120→250 (PR #11) | deployed + mechanism-proven on bench NR7101 | SGP.22 §2.5.5: initial SBPP segment (typically 183 B) must fit one APDU; 120 split it → invalidSignature → "unknown,unknown" (estkme-group#474). 250 not 255: Windows PC/SC uint8 total-length truncation (estkme-group#473). Upstream candidate when owner decides |
 | `--help` before euicc_init | deployed on bench unit | `lpac chip --help` no longer touches the card |
 | AT-only static ELF build | hardware-proven | Single binary, libc-only NEEDED — for /overlay-constrained targets |
 
