@@ -156,7 +156,28 @@ int euicc_init(struct euicc_ctx *ctx) {
     }
 
     if (ctx->es10x_mss == 0) {
-        ctx->es10x_mss = 120;
+        /* SGP.22 v2.2 section 2.5.5 (Segmented Bound Profile Package):
+         *   "Each segment of this list that is up to 255 bytes is transported
+         *    in one APDU. Larger TLVs are sent in blocks of 255 bytes for the
+         *    first blocks and a last block that MAY be shorter."
+         * The first SBPP segment (BPP tag/length + initialiseSecureChannelRequest,
+         * typically 183 bytes = 5-byte header + 178-byte BF23) MUST therefore fit
+         * in a single APDU; an MSS of 120 splits it, and spec-conforming eUICCs
+         * (SGP.22 section 2.5.6: the ProfileInstallationResult is created "right
+         * after the first BPP's TLV executed with error") reject the partial
+         * signature with invalidSignature, surfacing in lpac as the
+         * es10b_load_bound_profile_package "unknown,unknown" failure
+         * (estkme-group/lpac#474, hardware-reproduced on 9eSIM v2).
+         *
+         * 250 rather than 255: the Windows PC/SC backend narrows the total
+         * transmit length (5-byte header + data) through a uint8_t, so 255
+         * data bytes become a 4-byte transfer and authentication fails
+         * (estkme-group/lpac#473). 250 keeps every driver transportable while
+         * covering all observed initial-segment sizes. Transports that can
+         * carry the full 255 (e.g. at_csim) may raise it via
+         * LPAC_CUSTOM_ES10X_MSS.
+         */
+        ctx->es10x_mss = 250;
     }
 
     ret = ctx->apdu.interface->connect(ctx);
