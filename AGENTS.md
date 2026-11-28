@@ -39,6 +39,7 @@ we can:
 | `LPAC_APDU_AT_TIMEOUT_MS` override | logic-tested, hardware-pending | Raises per-APDU deadline for BPP installs on tired cards |
 | `LPAC_DEBUG_ES10B=1` hex-dump | deployed (Felix proved on hardware) | Dumps raw card response before DER parsing — diagnoses "unknown,unknown" failures |
 | Default MSS 120→250 (PR #11) | deployed + mechanism-proven on bench NR7101 | SGP.22 §2.5.5: initial SBPP segment (typically 183 B) must fit one APDU; 120 split it → invalidSignature → "unknown,unknown" (estkme-group#474). 250 not 255: Windows PC/SC uint8 total-length truncation (estkme-group#473). Upstream candidate when owner decides |
+| Provisioning-profile gate (D2-F1) | implemented, spec-lab-evidenced | list hides them (--all shows); enable/disable/delete/nickname refuse without --force — SGP.22 3.2.4/2.4.5.2 |
 | CLA channel coding (A1-F1) | implemented, spec-lab-evidenced | channels 4-19 use the ISO 7816-4 5.4.1 further CLA (0xC0-0xCF family, Table 47's full set) — the wwand sim.uc reference coding |
 | IMEI Octet8 nibble exception (5f9ae28) | implemented, spec-lab-evidenced (E4-F1) | `euicc_hexutil_imei2bin()` — the §5.7.13 line-8674 IMEI exception (check digit high, F low); ICCID callers stay plain TBCD |
 | `--help` before euicc_init | deployed on bench unit | `lpac chip --help` no longer touches the card |
