@@ -11,5 +11,6 @@ int euicc_hexutil_hex2bin_r(uint8_t *restrict output, uint32_t output_len, const
 
 int euicc_hexutil_gsmbcd2bin(uint8_t *restrict output, uint32_t output_len, const char *restrict input,
                              uint32_t padding_to);
+int euicc_hexutil_imei2bin(uint8_t *restrict output, const uint32_t output_len, const char *restrict input);
 
 int euicc_hexutil_bin2gsmbcd(char *restrict output, uint32_t output_len, const uint8_t *restrict bin, uint32_t bin_len);

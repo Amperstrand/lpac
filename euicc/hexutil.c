@@ -74,6 +74,23 @@ int euicc_hexutil_hex2bin_r(uint8_t *restrict output, const uint32_t output_len,
     return (int)bytes;
 }
 
+/* SGP.22 v2.2 5.7.13 (IMEI, Octet8): "the last octet contains the check digit
+ * (in high nibble) and an 'F' filler (in low nibble)" — the REVERSE of the
+ * plain TBCD odd-digit fill that gsmbcd2bin emits (F in high nibble). This is
+ * an IMEI-only exception: the ICCID octets are plain TBCD ("as coded in
+ * EFiccid", SGP.22 line 18931) and their callers MUST keep gsmbcd2bin.
+ * Found by spec-lab E4-F1 (targets/lpac-sgp22/audits/E4.md). */
+int euicc_hexutil_imei2bin(uint8_t *restrict output, const uint32_t output_len, const char *restrict input) {
+    const int bytes = euicc_hexutil_gsmbcd2bin(output, output_len, input, 0);
+    if (bytes < 1) {
+        return bytes;
+    }
+    if ((output[bytes - 1] & 0xF0) == 0xF0) {
+        output[bytes - 1] = (uint8_t)((output[bytes - 1] << 4) | 0x0F);
+    }
+    return bytes;
+}
+
 int euicc_hexutil_gsmbcd2bin(uint8_t *restrict output, const uint32_t output_len, const char *restrict input,
                              const uint32_t padding_to) {
     if (output == NULL || input == NULL || output_len < padding_to) {
