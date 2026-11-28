@@ -9,9 +9,27 @@
 #define APDU_EUICC_HEADER 0x80, 0xE2
 #define APDU_CONTINUE_READ_HEADER 0x80, 0xC0, 0x00, 0x00
 
+/* ISO/IEC 7816-4 5.4.1 channel coding (the same rule upstream wwand's sim.uc
+ * implements as channel_cla): channels 0-3 ride the low bits of the first
+ * interindustry CLA; channels 4-19 use a FURTHER interindustry CLA
+ * (0x40 | channel - 4), keeping the first CLA's class bits (secure
+ * messaging/chaining preserved by the caller's base). The old
+ * `cla & 0xF0 | (channel & 0xF)` coded channels 4-15 outside SGP.22 Table
+ * 47's '80'-'83' set and wrapped channels 16-19 onto OTHER channels
+ * ('80'-'83' again) — the APDU then named a channel that was never opened.
+ * Found by spec-lab A1-F1 (targets/lpac-sgp22/audits/A1.md). */
+static uint8_t es10x_channel_cla(uint8_t base_cla, uint8_t channel) {
+    if (channel < 4) {
+        return (base_cla & 0xF0) | (channel & 0x03);
+    }
+    /* the further-CLA family mirrors the base's interindustry (0x40) or
+     * proprietary (0xC0) half, per 7816-4 5.4.1's b8 rule */
+    return (base_cla & 0x80) | 0x40 | ((base_cla & 0x20) ? 0x20 : 0) | (channel - 4);
+}
+
 static int es10x_transmit(struct euicc_ctx *ctx, struct apdu_response *response, struct apdu_request *req,
                           unsigned req_len) {
-    req->cla = (req->cla & 0xF0) | (ctx->apdu._internal.logic_channel & 0x0F);
+    req->cla = es10x_channel_cla(req->cla, ctx->apdu._internal.logic_channel);
     return euicc_apdu_transmit(ctx, response, req, req_len);
 }
 
