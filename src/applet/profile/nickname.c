@@ -1,4 +1,5 @@
 #include "nickname.h"
+#include "class_guard.h"
 #include "main.h"
 
 #include <euicc/es10c.h>

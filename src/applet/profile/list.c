@@ -5,12 +5,15 @@
 #include <euicc/tostr.h>
 #include <lpac/utils.h>
 
+#include "class_guard.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-static int applet_main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv) {
+static int applet_main(int argc, char **argv) {
+    int show_all = 0;
     _cleanup_es10c_profile_info_list_ struct es10c_profile_info_list *profiles = NULL;
     struct es10c_profile_info_list *rptr;
     cJSON *jdata = NULL;
@@ -20,11 +23,24 @@ static int applet_main(__attribute__((unused)) int argc, __attribute__((unused))
         return -1;
     }
 
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--all") == 0) {
+            show_all = 1;
+        }
+    }
+
     jdata = cJSON_CreateArray();
     rptr = profiles;
 
     while (rptr) {
         cJSON *jprofile = NULL;
+
+        /* SGP.22 3.2.4 (7259): "It SHALL not include the Provisioning
+         * Profiles" in the End-User display — hidden unless --all. */
+        if (!show_all && rptr->profileClass == ES10C_PROFILE_CLASS_PROVISIONING) {
+            rptr = rptr->next;
+            continue;
+        }
 
         jprofile = cJSON_CreateObject();
         cJSON_AddStringOrNullToObject(jprofile, "iccid", rptr->iccid);

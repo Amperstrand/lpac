@@ -12,6 +12,7 @@ target_sources(
         applet/notification/remove.c
         applet/notification/replay.c
         applet/notification/dump.c
+        applet/profile/class_guard.c
         applet/profile/delete.c
         applet/profile/disable.c
         applet/profile/discovery.c

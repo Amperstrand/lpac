@@ -1,4 +1,5 @@
 #include "delete.h"
+#include "class_guard.h"
 #include "main.h"
 
 #include <euicc/es10c.h>
@@ -11,14 +12,28 @@
 static int applet_main(int argc, char **argv) {
     int ret;
     const char *param;
+    int force = 0;
 
     if (argc < 2) {
         printf("Usage: %s [iccid/aid]\n", argv[0]);
         return -1;
     }
 
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--force") == 0) {
+            force = 1;
+        }
+    }
     param = argv[1];
 
+    {
+        const char *class_str = NULL;
+        int guard = profile_class_check(param, force, &class_str);
+        if (guard == 1) {
+            fprintf(stderr, "refusing: %s is a Provisioning Profile (SGP.22 3.2.4: not selectable; --force overrides)\n", param);
+            return -1;
+        }
+    }
     ret = es10c_delete_profile(&euicc_ctx, param);
 
     if (ret) {

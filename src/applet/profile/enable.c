@@ -1,5 +1,6 @@
 #include "enable.h"
 
+#include "class_guard.h"
 #include "main.h"
 #include <lpac/utils.h>
 
@@ -7,10 +8,12 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 
 static int applet_main(int argc, char **argv) {
     int ret;
     const char *param;
+    int force = 0;
     bool refreshflag = false;
 
     if (argc < 2) {
@@ -19,11 +22,24 @@ static int applet_main(int argc, char **argv) {
         return -1;
     }
 
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--force") == 0) {
+            force = 1;
+        }
+    }
     param = argv[1];
 
     if (argc > 2)
         refreshflag = str_to_bool(argv[2]) == true;
 
+    {
+        const char *class_str = NULL;
+        int guard = profile_class_check(param, force, &class_str);
+        if (guard == 1) {
+            fprintf(stderr, "refusing: %s is a Provisioning Profile (SGP.22 3.2.4: not selectable; --force overrides)\n", param);
+            return -1;
+        }
+    }
     ret = es10c_enable_profile(&euicc_ctx, param, refreshflag);
 
     if (ret) {
