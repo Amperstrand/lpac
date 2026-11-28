@@ -195,7 +195,15 @@ int euicc_init(struct euicc_ctx *ctx) {
          * carry the full 255 (e.g. at_csim) may raise it via
          * LPAC_CUSTOM_ES10X_MSS.
          */
-        ctx->es10x_mss = 250;
+        /* 255: the spec's own block boundary (SGP.22 2.5.5: "Larger TLVs are
+         * sent in blocks of 255 bytes"), and the body buffer's exact capacity.
+         * The estkme-group#473 Windows-PC/SC uint8 total-length truncation
+         * (5-byte header + 255 data = 260 → 4) does not affect this fork's
+         * deployed transports (at_csim hex-encodes; stdio/AT have no uint8
+         * cap); a PC/SC build should set LPAC_CUSTOM_ES10X_MSS=250 until
+         * upstream fixes the driver. The prior 250 was a global workaround
+         * for a transport-local bug — the spec-lab B2 residue, now closed. */
+        ctx->es10x_mss = 255;
     }
 
     ret = ctx->apdu.interface->connect(ctx);
